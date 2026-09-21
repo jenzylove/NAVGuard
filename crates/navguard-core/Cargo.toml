@@ -1,0 +1,12 @@
+[package]
+name = "navguard-core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Deterministic policy engine for NAVGuard"
+
+[lib]
+crate-type = ["lib"]
+
+[features]
+default = []

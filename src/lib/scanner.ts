@@ -27,7 +27,7 @@ export function selectEffectiveMultiplier(
   replacementTimestamp: number,
   nowSeconds: number,
 ): number {
-  return replacementTimestamp > 0 && nowSeconds >= replacementTimestamp ? replacement : current;
+  return nowSeconds >= replacementTimestamp ? replacement : current;
 }
 
 export function classifyGuardState(input: {

@@ -1,0 +1,16 @@
+[toolchain]
+anchor_version = "1.2.0"
+
+[features]
+resolution = true
+skip-lint = false
+
+[programs.localnet]
+navguard = "7yEjSCMnrDevpu3ASWs2FG41hDHDgTe6NbdaDQZaZmzB"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test --workspace"

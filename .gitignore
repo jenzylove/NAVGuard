@@ -7,4 +7,6 @@ vite.config.d.ts
 .env.local
 test-results/
 playwright-report/
-
+target/
+.anchor/
+test-ledger/

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --pretty false",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo:live": "node scripts/live-proof.mjs",
+    "check:program": "cargo check -p navguard"
   },
   "dependencies": {
     "@solana/spl-token": "^0.4.14",

@@ -10,6 +10,10 @@ describe("multiplier activation", () => {
     expect(selectEffectiveMultiplier(1.01, 4.04, 2_000, 2_000)).toBe(4.04);
   });
 
+  it("mirrors Token-2022 when the activation timestamp is zero", () => {
+    expect(selectEffectiveMultiplier(1.01, 1.02, 0, 2_000)).toBe(1.02);
+  });
+
   it("flags an activated mismatch as integration risk", () => {
     expect(
       classifyGuardState({

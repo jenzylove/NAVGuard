@@ -18,6 +18,16 @@ NAVGuard's first shipped surface is a wallet-free mainnet scanner that:
 The next program milestone exposes this policy as a CPI guard so vaults can
 enforce it before settlement instead of merely receiving an alert.
 
+## Reproduce the live bug class
+
+```bash
+npm run demo:live
+```
+
+The script reads the SPYx mint from mainnet and compares a reference vault that
+uses the stored multiplier with clock-aware NAV math. It does not touch funds or
+submit a transaction.
+
 ## Run locally
 
 ```bash
@@ -35,7 +45,14 @@ role. Set `SOLANA_RPC_URL` to a dedicated provider endpoint before deployment.
 npm run typecheck
 npm test
 npm run build
+cargo check -p navguard
 ```
+
+The on-chain workspace contains:
+
+- `navguard-core`: a `no_std` deterministic policy engine;
+- `programs/navguard`: Anchor instructions for read-only `evaluate` and
+  CPI-enforced `assert_safe_nav`.
 
 ## Current architecture
 
