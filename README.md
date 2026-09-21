@@ -85,6 +85,20 @@ A 4:1 split produces the same bug at 7,500 bps, covered by the policy tests in
 cargo test --workspace
 ```
 
+## Live on devnet
+
+| Program | Address |
+| --- | --- |
+| NAVGuard | [`GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA`](https://explorer.solana.com/address/GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA?cluster=devnet) |
+| Reference vault | [`3mELb3aUhBEtWX3uQoCfLCs5M68Wn8YUTJwdkQZDYKZM`](https://explorer.solana.com/address/3mELb3aUhBEtWX3uQoCfLCs5M68Wn8YUTJwdkQZDYKZM?cluster=devnet) |
+
+| Step | Result | Transaction |
+| --- | --- | --- |
+| `redeem_guarded` | Reverted on chain inside the NAVGuard CPI: `MultiplierMismatch` (6006). No funds moved. | [explorer](https://explorer.solana.com/tx/3W4FPythLyF1FCRNF8fFzJ176XKyD5o4Fo6t3HnWXfzEtWphUBo9TFLqqfJshugHjo6b6zZXxYwcokRw8Yw6bDWb?cluster=devnet) |
+| `redeem_unguarded` | Paid 50 tokens where 25 were owed. | [explorer](https://explorer.solana.com/tx/5LTgXpP3wQdKomQ7aM8HryzjhHQWzQVVk8XU3aURFyqp5Vb13HMnWTiyuKeZgCigvHLN7T5ug2eqeG56KH87SVwm?cluster=devnet) |
+
+Full run with every step: `docs/devnet-proof.json`.
+
 ## End to end on a live validator
 
 Both programs compile to SBF and run the exploit against a real Token-2022 mint

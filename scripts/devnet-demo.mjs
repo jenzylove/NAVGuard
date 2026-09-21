@@ -3,7 +3,7 @@
 // 1. Create a Token-2022 mint with the Scaled UI Amount extension (multiplier 1.0),
 //    the same extension xStocks use.
 // 2. Deposit into the reference vault at multiplier 1.0.
-// 3. Schedule a 2:1 corporate action a few seconds ahead and let it activate. The
+// 3. Schedule a 2:1 corporate action 45 seconds ahead and let it activate. The
 //    mint's stored `multiplier` field now trails the effective one, exactly the
 //    state six of the ten largest xStocks were in on 2026-09-20.
 // 4. redeem_guarded: NAVGuard aborts the transaction (MultiplierMismatch).
@@ -64,11 +64,24 @@ const u64 = (n) => {
   return b;
 };
 const meta = (pubkey, isWritable = false, isSigner = false) => ({ pubkey, isWritable, isSigner });
-const send = (ixs, signers = []) =>
-  sendAndConfirmTransaction(connection, new Transaction().add(...ixs), [payer, ...signers], {
-    commitment: "confirmed",
-  });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Public devnet RPC occasionally drops blockhashes; retry those, surface the rest.
+async function retry(fn, attempts = 4) {
+  for (let i = 0; ; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i + 1 >= attempts || !/Blockhash not found|block height exceeded|429/.test(String(err.message))) throw err;
+      await sleep(1500);
+    }
+  }
+}
+const send = (ixs, signers = []) =>
+  retry(() =>
+    sendAndConfirmTransaction(connection, new Transaction().add(...ixs), [payer, ...signers], {
+      commitment: "confirmed",
+    }),
+  );
 
 async function main() {
   const log = { cluster: RPC, navguard: NAVGUARD.toBase58(), vault_program: VAULT_PROGRAM.toBase58(), steps: [] };
@@ -161,7 +174,7 @@ async function main() {
   }
 
   // 3. Schedule a 2:1 split a few seconds out and let it activate.
-  const effectiveAt = Math.floor(Date.now() / 1000) + 8;
+  const effectiveAt = Math.floor(Date.now() / 1000) + 45;
   sig = await send([
     createUpdateMultiplierDataInstruction(mint.publicKey, payer.publicKey, SPLIT, BigInt(effectiveAt), [], TOKEN_2022_PROGRAM_ID),
   ]);
@@ -194,15 +207,40 @@ async function main() {
   const shares = 50n * UNIT; // the redeemer's full position at multiplier 1.0
   const balance = async () => (await getAccount(connection, ataOf(payer.publicKey), "confirmed", TOKEN_2022_PROGRAM_ID)).amount;
 
-  // 4. Guarded redeem: must fail.
-  try {
-    await send([redeemIx("redeem_guarded", shares)]);
-    step("redeem_guarded", { result: "UNEXPECTED SUCCESS" });
-  } catch (err) {
-    const logs = err.logs ?? (await err.getLogs?.(connection)) ?? [];
-    const reason = logs.find((l) => l.includes("Error Code")) ?? String(err.message).split("\n")[0];
-    step("redeem_guarded (NAVGuard CPI)", { result: "REVERTED, no funds moved", reason });
+  // 4. Guarded redeem: sent without preflight so the reverted transaction lands
+  //    on chain with a signature anyone can inspect.
+  const guardedBefore = await balance();
+  let guardedSig;
+  let landed = null;
+  for (let attempt = 0; attempt < 5 && !landed; attempt++) {
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    const tx = new Transaction({ feePayer: payer.publicKey, blockhash, lastValidBlockHeight }).add(
+      redeemIx("redeem_guarded", shares),
+    );
+    tx.sign(payer);
+    const raw = tx.serialize();
+    guardedSig = await connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 });
+    // Rebroadcast until the network records the signature or the blockhash expires.
+    for (let i = 0; i < 30 && !landed; i++) {
+      await sleep(1500);
+      const [status] = (await connection.getSignatureStatuses([guardedSig])).value;
+      if (status?.confirmationStatus) {
+        for (let j = 0; j < 10 && !landed; j++) {
+          landed = await connection.getTransaction(guardedSig, { commitment: "confirmed", maxSupportedTransactionVersion: 0 });
+          if (!landed) await sleep(1000);
+        }
+      } else {
+        await connection.sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 }).catch(() => {});
+      }
+    }
   }
+  const reason = landed?.meta?.logMessages?.find((l) => l.includes("Error Code")) ?? JSON.stringify(landed?.meta?.err);
+  step("redeem_guarded (NAVGuard CPI)", {
+    result: !landed ? "NOT LANDED (retry the demo)" : landed.meta.err ? "REVERTED on chain" : "UNEXPECTED SUCCESS",
+    funds_moved: String((await balance()) - guardedBefore),
+    reason,
+    tx: explorer(guardedSig),
+  });
 
   // 5. Unguarded redeem: succeeds and overpays.
   const before = await balance();

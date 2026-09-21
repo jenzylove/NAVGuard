@@ -1,0 +1,55 @@
+{
+  "cluster": "https://api.devnet.solana.com",
+  "navguard": "GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA",
+  "vault_program": "3mELb3aUhBEtWX3uQoCfLCs5M68Wn8YUTJwdkQZDYKZM",
+  "steps": [
+    {
+      "name": "create stock mint (Token-2022, Scaled UI Amount 1.0)",
+      "mint": "6omijvYV6aDZB5FMhk6CNKVA91Jr4pcvdJ6UtdQ7eVFo",
+      "tx": "https://explorer.solana.com/tx/4crgVTW7vTW5seXouWGXe4NkZYc2NKYibQPZmHLAWi5FeKfoYoqeg4B1deS79zQq4ezz9NSwNfGAgFJRUksC8SUX?cluster=devnet"
+    },
+    {
+      "name": "fund two holders with 100 tokens each",
+      "tx": "https://explorer.solana.com/tx/2mZdu5A82yvKFVLDN4QH4gbrEXsXNSTwHVD66tDgBZuTjDadPfxiLFuArcNGg6mmDw7Mhcdsf62tEMmNd713Jt81?cluster=devnet"
+    },
+    {
+      "name": "initialize reference vault",
+      "vault": "H1Unpc7fwQ5DF5TAdSJjXcGfNgQAh7xEe3cTYpLnTSN",
+      "tx": "https://explorer.solana.com/tx/32x7G67iXEfTBNmY7jEtYTuUA65x8AUQi3NPtHDmokRmYeQqhgWkiaaARYXDLmzctS7HoUxLvpNuq9YnPxngjinq?cluster=devnet"
+    },
+    {
+      "name": "deposit 50 tokens (redeemer)",
+      "tx": "https://explorer.solana.com/tx/5X69CttRh146qXAZLRK9XyotPmQ1eCh558ibj8BhpH44qesrzbSD38Ax95crSAME3fH3UEhay9PLjgavVyg5gD3o?cluster=devnet"
+    },
+    {
+      "name": "deposit 50 tokens (other depositor)",
+      "tx": "https://explorer.solana.com/tx/5J3uo4mSRTQX4V8p1uhVLYDF5Z65usxeNeHv29HHKzHo8AE73BkcBK1RVTUVy8KfKSmFLFU9m11f82zGKugwgyKz?cluster=devnet"
+    },
+    {
+      "name": "schedule 2:1 corporate action",
+      "new_multiplier": 2,
+      "effective_at": "2026-09-21T23:53:38.000Z",
+      "tx": "https://explorer.solana.com/tx/2VbBLks9zBaWEu2agXw2axyEzDjkBE9QQoG7ccdQjkuwqWB8vxgo8Sr7x8R1e6jc3fDhegmM4BTwKKZsrG4ZAfvh?cluster=devnet"
+    },
+    {
+      "name": "mint state after activation",
+      "stored_multiplier": 1,
+      "new_multiplier": 2,
+      "stale": true
+    },
+    {
+      "name": "redeem_guarded (NAVGuard CPI)",
+      "result": "REVERTED on chain",
+      "funds_moved": "0",
+      "reason": "Program log: AnchorError thrown in programs/navguard/src/lib.rs:63. Error Code: MultiplierMismatch. Error Number: 6006. Error Message: The caller multiplier differs from the effective on-chain multiplier.",
+      "tx": "https://explorer.solana.com/tx/3W4FPythLyF1FCRNF8fFzJ176XKyD5o4Fo6t3HnWXfzEtWphUBo9TFLqqfJshugHjo6b6zZXxYwcokRw8Yw6bDWb?cluster=devnet"
+    },
+    {
+      "name": "redeem_unguarded",
+      "raw_paid": "50 tokens",
+      "raw_owed": "25 tokens",
+      "overpaid": "25 tokens taken from the other depositor",
+      "tx": "https://explorer.solana.com/tx/5LTgXpP3wQdKomQ7aM8HryzjhHQWzQVVk8XU3aURFyqp5Vb13HMnWTiyuKeZgCigvHLN7T5ug2eqeG56KH87SVwm?cluster=devnet"
+    }
+  ]
+}
