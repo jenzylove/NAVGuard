@@ -13,7 +13,7 @@ use spl_token_2022_interface::{
     pod::PodMint,
 };
 
-declare_id!("7yEjSCMnrDevpu3ASWs2FG41hDHDgTe6NbdaDQZaZmzB");
+declare_id!("GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA");
 
 const DEFAULT_ACTIVATION_WINDOW_SECONDS: u32 = 15 * 60;
 

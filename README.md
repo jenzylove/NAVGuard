@@ -85,6 +85,33 @@ A 4:1 split produces the same bug at 7,500 bps, covered by the policy tests in
 cargo test --workspace
 ```
 
+## End to end on a live validator
+
+Both programs compile to SBF and run the exploit against a real Token-2022 mint
+with the Scaled UI Amount extension. `scripts/devnet-demo.mjs` creates the mint,
+deposits two holders into the vault at multiplier 1.0, schedules a 2:1 corporate
+action a few seconds ahead, and lets it activate. The stored multiplier stays at
+1 while the effective one becomes 2, the same state as the live xStocks.
+
+| Step | Result |
+| --- | --- |
+| `redeem_guarded` | Reverted inside the NAVGuard CPI: `MultiplierMismatch` (6006). No funds moved. |
+| `redeem_unguarded` | Paid 50 tokens where 25 were owed. The extra 25 came from the other depositor. |
+
+Recorded run: `docs/localnet-proof.json`.
+
+```bash
+# inside WSL / Linux
+bash scripts/wsl-toolchain.sh   # Rust, Agave Solana CLI
+bash scripts/wsl-build.sh       # SBF build, program ids synced to target/deploy
+bash scripts/wsl-localnet.sh    # validator with both programs loaded
+# from the repo root
+SOLANA_RPC_URL=http://127.0.0.1:8899 node scripts/devnet-demo.mjs
+```
+
+Point `SOLANA_RPC_URL` at devnet after `solana program deploy` to produce explorer
+links.
+
 ## Current architecture
 
 ```text

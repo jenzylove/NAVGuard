@@ -14,7 +14,7 @@ use anchor_spl::{
 
 pub mod math;
 
-declare_id!("DZ5ebhqi5d84jj7atH1X6vX5KZZzH2gvb4PvEhZreD2R");
+declare_id!("3mELb3aUhBEtWX3uQoCfLCs5M68Wn8YUTJwdkQZDYKZM");
 
 /// Tolerance passed to NAVGuard. 5 bps absorbs f64 to e9 rounding and nothing more.
 pub const GUARD_MAX_DEVIATION_BPS: u16 = 5;

@@ -1,0 +1,53 @@
+{
+  "cluster": "http://127.0.0.1:8899",
+  "navguard": "GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA",
+  "vault_program": "3mELb3aUhBEtWX3uQoCfLCs5M68Wn8YUTJwdkQZDYKZM",
+  "steps": [
+    {
+      "name": "create stock mint (Token-2022, Scaled UI Amount 1.0)",
+      "mint": "2CY4h39CXHuPUzq6b6nYWemKLCRPHmNwnLqKwCa5ZjFM",
+      "tx": "localnet:22E6hqiEboeS7yqYCXRP4HZ64F8QtkPmvkNGdoYe3J6puJzf96uE4g8fyRhRKZLXru3YviFRMrM1S5xKjAqWKCae"
+    },
+    {
+      "name": "fund two holders with 100 tokens each",
+      "tx": "localnet:4Up7jK3eHR6Yitks31hrVot3Gr6uRFPq6qGcydc5hkgdJ6Yq8s8xSqup94Sis5NEMxfYNL9WLkGsq26JfzfNmEY3"
+    },
+    {
+      "name": "initialize reference vault",
+      "vault": "7D5aRcAS5tLNiYGA24mjjvQd9bThNMhxTBp7Xkn9wnfi",
+      "tx": "localnet:4UN86Fk6x7gYTwaHqwtsA8t54tDXZmtsjSA6xevh17HSs16d7q8XJJVkQrdqFW1RdCrv1b59UQDeSQ3mZgqMXnqb"
+    },
+    {
+      "name": "deposit 50 tokens (redeemer)",
+      "tx": "localnet:2AXfqaEE7STtoLJ4mMyHW2CVKXRQUGBkqKgvabuUbwLoKE8QJu9FWpStfMLBZCRP1gBrcXXu97amo1dtk7aEfzRy"
+    },
+    {
+      "name": "deposit 50 tokens (other depositor)",
+      "tx": "localnet:YxScsikByiYEL1GbtPrPpHMhuGjdxb2dmTtaPAzy3JYAmAoAiEmVYCJSjrE3GCV4byi6WitZS14bRCrpE58FAbm"
+    },
+    {
+      "name": "schedule 2:1 corporate action",
+      "new_multiplier": 2,
+      "effective_at": "2026-09-21T23:39:24.000Z",
+      "tx": "localnet:3ga2XrymKi32p1ttWfwQSdnAN7AVCUHzeqhDHz7gnksuZ2f62E8JKrFRMaNd3a9A7s75WWJuLsnQDodYBMxEgcDS"
+    },
+    {
+      "name": "mint state after activation",
+      "stored_multiplier": 1,
+      "new_multiplier": 2,
+      "stale": true
+    },
+    {
+      "name": "redeem_guarded (NAVGuard CPI)",
+      "result": "REVERTED, no funds moved",
+      "reason": "Program log: AnchorError thrown in programs/navguard/src/lib.rs:63. Error Code: MultiplierMismatch. Error Number: 6006. Error Message: The caller multiplier differs from the effective on-chain multiplier."
+    },
+    {
+      "name": "redeem_unguarded",
+      "raw_paid": "50 tokens",
+      "raw_owed": "25 tokens",
+      "overpaid": "25 tokens taken from the other depositor",
+      "tx": "localnet:sSrNE8HmHeBiD3BbDx1U5VLgmBnKeGFcQpDfffhTUAx4cerjumz4CRRqytSz2VAg4cMjUMPNnmacxVQFxu2hbWb"
+    }
+  ]
+}
