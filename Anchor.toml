@@ -7,6 +7,7 @@ skip-lint = false
 
 [programs.localnet]
 navguard = "7yEjSCMnrDevpu3ASWs2FG41hDHDgTe6NbdaDQZaZmzB"
+reference_vault = "DZ5ebhqi5d84jj7atH1X6vX5KZZzH2gvb4PvEhZreD2R"
 
 [provider]
 cluster = "Localnet"

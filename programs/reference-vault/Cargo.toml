@@ -1,0 +1,25 @@
+[package]
+name = "reference-vault"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Reference tokenized-stock vault showing the stale multiplier bug and the NAVGuard CPI fix"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "reference_vault"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+
+[dependencies]
+anchor-lang = { version = "1.2.0", features = ["init-if-needed"] }
+anchor-spl = { version = "1.2.0", default-features = false, features = ["token", "token_2022", "associated_token"] }
+navguard = { path = "../navguard", features = ["cpi"] }
+navguard-core = { path = "../../crates/navguard-core" }
+spl-token-2022-interface = "3.1.1"

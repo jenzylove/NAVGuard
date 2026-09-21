@@ -15,8 +15,9 @@ NAVGuard's first shipped surface is a wallet-free mainnet scanner that:
 - classifies each mint as `SAFE`, `REVIEW`, or `BLOCK`;
 - provides per-mint evidence and a Solscan verification link.
 
-The next program milestone exposes this policy as a CPI guard so vaults can
-enforce it before settlement instead of merely receiving an alert.
+The program exposes this policy as a CPI guard, so vaults enforce it before
+settlement instead of merely receiving an alert. A reference vault shows the
+difference on the real SPYx mint.
 
 ## Reproduce the live bug class
 
@@ -52,7 +53,37 @@ The on-chain workspace contains:
 
 - `navguard-core`: a `no_std` deterministic policy engine;
 - `programs/navguard`: Anchor instructions for read-only `evaluate` and
-  CPI-enforced `assert_safe_nav`.
+  CPI-enforced `assert_safe_nav`;
+- `programs/reference-vault`: the vulnerable vault and its fix.
+
+## Reference vault: the exploit and the fix
+
+`programs/reference-vault` is a deliberately ordinary vault for tokenized
+stocks. It prices shares with the stored `multiplier` field, the most common
+integration mistake. Its two redeem instructions run identical math:
+
+| Instruction | What happens |
+| --- | --- |
+| `redeem_unguarded` | Pays out with the stale multiplier. Every redeemer takes more raw tokens than they are owed, drained from the remaining depositors. |
+| `redeem_guarded` | Calls `navguard::assert_safe_nav` through CPI with the exact multiplier it is about to use. NAVGuard rejects it with `MultiplierMismatch` and the whole transaction reverts. |
+
+The fix is one CPI. The vault math does not change.
+
+`programs/reference-vault/tests/spyx_exploit.rs` replays this against the SPYx
+mint account captured from mainnet at slot 449128089 (`tests/fixtures/`):
+
+- the stored multiplier trails the effective one by about 18 bps;
+- redeeming 1,000 SPY of shares through the unguarded path overpays by roughly
+  1.8 SPYx;
+- NAVGuard returns `RED / MultiplierMismatch` for the vault's multiplier and
+  `GREEN / Safe` for the effective one.
+
+A 4:1 split produces the same bug at 7,500 bps, covered by the policy tests in
+`navguard-core`.
+
+```bash
+cargo test --workspace
+```
 
 ## Current architecture
 

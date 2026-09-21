@@ -2,6 +2,7 @@
 members = [
   "crates/navguard-core",
   "programs/navguard",
+  "programs/reference-vault",
 ]
 resolver = "2"
 

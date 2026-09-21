@@ -107,13 +107,32 @@ fn inspect_mint(
     max_deviation_bps: u16,
     now: i64,
 ) -> Result<GuardReport> {
+    let data = mint_account.try_borrow_data()?;
+    inspect_mint_data(
+        mint_account.owner,
+        &data,
+        expected_multiplier_e9,
+        max_deviation_bps,
+        now,
+    )
+}
+
+/// Evaluates raw Token-2022 mint bytes. The on-chain instructions and off-chain
+/// tests share this path, so a captured mainnet account exercises exactly the
+/// logic that runs inside the program.
+pub fn inspect_mint_data(
+    owner: &Pubkey,
+    data: &[u8],
+    expected_multiplier_e9: u64,
+    max_deviation_bps: u16,
+    now: i64,
+) -> Result<GuardReport> {
     require!(
-        mint_account.owner.to_bytes() == spl_token_2022_interface::id().to_bytes(),
+        owner.to_bytes() == spl_token_2022_interface::id().to_bytes(),
         NavGuardError::InvalidMintOwner
     );
 
-    let data = mint_account.try_borrow_data()?;
-    let mint = PodStateWithExtensions::<PodMint>::unpack(&data)
+    let mint = PodStateWithExtensions::<PodMint>::unpack(data)
         .map_err(|_| error!(NavGuardError::InvalidMintData))?;
     let scaled = mint
         .get_extension::<ScaledUiAmountConfig>()
