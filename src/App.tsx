@@ -21,6 +21,8 @@ import {
   Unplug,
   X,
 } from "lucide-react";
+import HeroArt from "./HeroArt";
+import { ProofSection, IntegrateSection } from "./Sections";
 import { RPC_URL, scanAssets, scanCustomMint } from "./lib/scanner";
 import type { GuardState, MintScan } from "./lib/types";
 import { fetchPriorityAssets } from "./lib/xstocks";
@@ -37,12 +39,12 @@ function compactAddress(address: string) {
 }
 
 function formatMultiplier(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "·";
   return value.toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 });
 }
 
 function formatDelta(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "·";
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)} bps`;
 }
 
@@ -244,51 +246,42 @@ export default function App() {
     <div className="app-shell">
       <header className="topbar">
         <a className="brand" href="#top" aria-label="NAVGuard home">
-          <span className="brand-mark"><ScanLine size={19} /></span>
-          <span>NAV<span>GUARD</span></span>
+          <span className="brand-mark"><ShieldCheck size={17} /></span>
+          <span>navguard</span>
         </a>
         <nav>
-          <a className="nav-link nav-link--active" href="#scan">Scanner</a>
-          <a className="nav-link" href="#how-it-works">How it works</a>
-          <a className="nav-link" href="https://github.com/jenzylove/NAVGuard" target="_blank" rel="noreferrer">Docs <ArrowUpRight size={13} /></a>
+          <a className="nav-link" href="#scan">Live scan</a>
+          <a className="nav-link" href="#proof">Devnet proof</a>
+          <a className="nav-link" href="#integrate">Integrate</a>
         </nav>
-        <div className="network-badge"><SourceDot /> SOLANA MAINNET</div>
+        <div className="topbar-right">
+          <a className="nav-link" href="https://github.com/jenzylove/NAVGuard" target="_blank" rel="noreferrer">GitHub</a>
+          <a className="cta-chip" href="#scan">Run the scan</a>
+        </div>
       </header>
 
       <main id="top">
         <section className="hero">
-          <div className="hero-grid" />
           <div className="hero-copy">
-            <div className="eyebrow"><span>LIVE TOKEN-2022 INTELLIGENCE</span></div>
-            <h1>Stop stale multipliers<br />from corrupting <em>NAV.</em></h1>
+            <h1>Stop pricing stocks with yesterday&rsquo;s multiplier</h1>
             <p>
-              NAVGuard reads what is effective now—not merely what is stored—then exposes the
-              pause, hook, and activation state your xStock integration needs to enforce.
+              A Solana guard program that blocks vault mints, redemptions and loans priced on a stale
+              Token-2022 multiplier.
             </p>
-            <div className="hero-actions">
-              <a className="hero-button" href="#scan"><ScanLine size={17} /> View live scan</a>
-              <span className="last-scan"><SourceDot /> {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Connecting to mainnet"}</span>
+            <div className="hero-live">
+              <SourceDot />
+              {loading
+                ? "Reading xStock mints on mainnet"
+                : `${metrics.review + metrics.blocked} of ${metrics.scanned} live xStocks carry a stale multiplier right now`}
             </div>
           </div>
-          <div className="hero-proof">
-            <div className="proof-topline">
-              <span>LIVE FINDING</span>
-              <Activity size={17} />
-            </div>
-            <strong>{loading ? "—" : metrics.review}</strong>
-            <h2>mints require review</h2>
-            <p>Stored and effective multiplier state diverge, creating a trap for naive NAV integrations.</p>
-            <div className="proof-footer">
-              <span>Largest observed delta</span>
-              <strong className="mono">{metrics.maxDelta ? `${metrics.maxDelta.symbol} ${formatDelta(metrics.maxDelta.deltaBps)}` : "—"}</strong>
-            </div>
-          </div>
+          <HeroArt />
         </section>
 
         <section className="metric-strip" aria-label="Scan overview">
-          <div><small>MINTS SCANNED</small><strong>{loading ? "—" : metrics.scanned}</strong><span>priority xStocks</span></div>
-          <div><small>REQUIRES REVIEW</small><strong className="amber-text">{loading ? "—" : metrics.review}</strong><span>integration risk</span></div>
-          <div><small>HARD BLOCKS</small><strong className={metrics.blocked ? "red-text" : ""}>{loading ? "—" : metrics.blocked}</strong><span>paused or unsafe</span></div>
+          <div><small>MINTS SCANNED</small><strong>{loading ? "·" : metrics.scanned}</strong><span>priority xStocks</span></div>
+          <div><small>REQUIRES REVIEW</small><strong className="amber-text">{loading ? "·" : metrics.review}</strong><span>integration risk</span></div>
+          <div><small>HARD BLOCKS</small><strong className={metrics.blocked ? "red-text" : ""}>{loading ? "·" : metrics.blocked}</strong><span>paused or unsafe</span></div>
           <div><small>DATA PROVENANCE</small><strong className="source-name">ON-CHAIN</strong><span>not an indexer estimate</span></div>
         </section>
 
@@ -378,12 +371,14 @@ export default function App() {
             </article>
           </div>
         </section>
+        <ProofSection />
+        <IntegrateSection />
       </main>
 
       <footer>
-        <div className="brand footer-brand"><span className="brand-mark"><ScanLine size={16} /></span><span>NAV<span>GUARD</span></span></div>
-        <p>Open infrastructure for safer tokenized-stock integrations on Solana.</p>
-        <span>Built for the 2026 Solana Stock Hackathon</span>
+        <div className="brand footer-brand"><span className="brand-mark"><ShieldCheck size={15} /></span><span>navguard</span></div>
+        <p>Open safety infrastructure for tokenized stock integrations on Solana.</p>
+        <span>Built for Stocklana 2026</span>
       </footer>
 
       {selected ? <DetailPanel scan={selected} onClose={() => setSelected(null)} /> : null}
