@@ -5,31 +5,31 @@
   "steps": [
     {
       "name": "create stock mint (Token-2022, Scaled UI Amount 1.0)",
-      "mint": "6omijvYV6aDZB5FMhk6CNKVA91Jr4pcvdJ6UtdQ7eVFo",
-      "tx": "https://explorer.solana.com/tx/4crgVTW7vTW5seXouWGXe4NkZYc2NKYibQPZmHLAWi5FeKfoYoqeg4B1deS79zQq4ezz9NSwNfGAgFJRUksC8SUX?cluster=devnet"
+      "mint": "9BvQmZ7oNBaYUbhvRkxsphEESxrS1xpCfohWW6PUpUwk",
+      "tx": "https://explorer.solana.com/tx/4UTtGzA3aCGBLqjAUbg77Gg9me4ev5i7MSYMGCbXSDWDqovz1ndMXFsT3LfhPq6v6fZnSnZsmKe6CthZHWu7XtJt?cluster=devnet"
     },
     {
       "name": "fund two holders with 100 tokens each",
-      "tx": "https://explorer.solana.com/tx/2mZdu5A82yvKFVLDN4QH4gbrEXsXNSTwHVD66tDgBZuTjDadPfxiLFuArcNGg6mmDw7Mhcdsf62tEMmNd713Jt81?cluster=devnet"
+      "tx": "https://explorer.solana.com/tx/59n7Nu1V3ms3EUipNhSP61uv2iqXkMbkjcqgKphLcugd3S4mCwL1KrNkv9k7S4gBFq3aesfChPFrUFV2roGb1TuR?cluster=devnet"
     },
     {
       "name": "initialize reference vault",
-      "vault": "H1Unpc7fwQ5DF5TAdSJjXcGfNgQAh7xEe3cTYpLnTSN",
-      "tx": "https://explorer.solana.com/tx/32x7G67iXEfTBNmY7jEtYTuUA65x8AUQi3NPtHDmokRmYeQqhgWkiaaARYXDLmzctS7HoUxLvpNuq9YnPxngjinq?cluster=devnet"
+      "vault": "CujZvVLCpjWEL45ewXBhnXjsGzmkKq57jttf2NCFCb9T",
+      "tx": "https://explorer.solana.com/tx/2UhmVkzScCC7GTbVXEX5nkfAtwxWafWfwDi8KrGhnsY1cdAwTUJ7cB9yVjb8Z6MJkUDujcPRWWSS9WoXpgmSZRFp?cluster=devnet"
     },
     {
       "name": "deposit 50 tokens (redeemer)",
-      "tx": "https://explorer.solana.com/tx/5X69CttRh146qXAZLRK9XyotPmQ1eCh558ibj8BhpH44qesrzbSD38Ax95crSAME3fH3UEhay9PLjgavVyg5gD3o?cluster=devnet"
+      "tx": "https://explorer.solana.com/tx/4tGX7LuYDYP4UQDzbkXs4Rszvi5pFTr4kxWY9vq9yp6x9amxTigx5YDnGhmr2VouF93JotmmbCH9DMUme3nc1AVQ?cluster=devnet"
     },
     {
       "name": "deposit 50 tokens (other depositor)",
-      "tx": "https://explorer.solana.com/tx/5J3uo4mSRTQX4V8p1uhVLYDF5Z65usxeNeHv29HHKzHo8AE73BkcBK1RVTUVy8KfKSmFLFU9m11f82zGKugwgyKz?cluster=devnet"
+      "tx": "https://explorer.solana.com/tx/pdjZKbXaN3ohuzJG9E371rPvicRvmtcCLGbSTr7FvRdz2mxra56wDZKsrLVUw9SK7V9DmXG1auw1CCF7L5rcnDp?cluster=devnet"
     },
     {
       "name": "schedule 2:1 corporate action",
       "new_multiplier": 2,
-      "effective_at": "2026-09-21T23:53:38.000Z",
-      "tx": "https://explorer.solana.com/tx/2VbBLks9zBaWEu2agXw2axyEzDjkBE9QQoG7ccdQjkuwqWB8vxgo8Sr7x8R1e6jc3fDhegmM4BTwKKZsrG4ZAfvh?cluster=devnet"
+      "effective_at": "2026-09-22T12:07:35.000Z",
+      "tx": "https://explorer.solana.com/tx/5F1TRkn3VXvXDoVGArWA6L8CV7YUHg7BcGFvrsUSMGfF3GSXqSD9Wc87Bhd2Bdpef7AJ79K9airsm4Z3kTV3uYJD?cluster=devnet"
     },
     {
       "name": "mint state after activation",
@@ -41,15 +41,15 @@
       "name": "redeem_guarded (NAVGuard CPI)",
       "result": "REVERTED on chain",
       "funds_moved": "0",
-      "reason": "Program log: AnchorError thrown in programs/navguard/src/lib.rs:63. Error Code: MultiplierMismatch. Error Number: 6006. Error Message: The caller multiplier differs from the effective on-chain multiplier.",
-      "tx": "https://explorer.solana.com/tx/3W4FPythLyF1FCRNF8fFzJ176XKyD5o4Fo6t3HnWXfzEtWphUBo9TFLqqfJshugHjo6b6zZXxYwcokRw8Yw6bDWb?cluster=devnet"
+      "reason": "Program log: AnchorError thrown in programs/navguard/src/lib.rs:75. Error Code: MultiplierMismatch. Error Number: 6006. Error Message: The caller multiplier differs from the effective on-chain multiplier.",
+      "tx": "https://explorer.solana.com/tx/38CAqJYocF4jM8Uf3YPetg1A7Wt2YLjEf7uYjnvzkpBUmXcWcFFMfmtbbjiUfYmUjum3VDLcBP5ms7zjmQkj6njm?cluster=devnet"
     },
     {
       "name": "redeem_unguarded",
       "raw_paid": "50 tokens",
       "raw_owed": "25 tokens",
       "overpaid": "25 tokens taken from the other depositor",
-      "tx": "https://explorer.solana.com/tx/5LTgXpP3wQdKomQ7aM8HryzjhHQWzQVVk8XU3aURFyqp5Vb13HMnWTiyuKeZgCigvHLN7T5ug2eqeG56KH87SVwm?cluster=devnet"
+      "tx": "https://explorer.solana.com/tx/oWAy8kJFktWrTV8Xdg7orUt4SjnSuEqni9aoipef6KNhim5SuMFXYPE3y248qEuaHgBCGexixcxipJhRoeUrb2L?cluster=devnet"
     }
   ]
 }

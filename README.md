@@ -110,8 +110,8 @@ cargo test --workspace
 
 | Step | Result | Transaction |
 | --- | --- | --- |
-| `redeem_guarded` | Reverted on chain inside the NAVGuard CPI: `MultiplierMismatch` (6006). No funds moved. | [explorer](https://explorer.solana.com/tx/3W4FPythLyF1FCRNF8fFzJ176XKyD5o4Fo6t3HnWXfzEtWphUBo9TFLqqfJshugHjo6b6zZXxYwcokRw8Yw6bDWb?cluster=devnet) |
-| `redeem_unguarded` | Paid 50 tokens where 25 were owed. | [explorer](https://explorer.solana.com/tx/5LTgXpP3wQdKomQ7aM8HryzjhHQWzQVVk8XU3aURFyqp5Vb13HMnWTiyuKeZgCigvHLN7T5ug2eqeG56KH87SVwm?cluster=devnet) |
+| `redeem_guarded` | Reverted on chain inside the NAVGuard CPI: `MultiplierMismatch` (6006). No funds moved. | [explorer](https://explorer.solana.com/tx/38CAqJYocF4jM8Uf3YPetg1A7Wt2YLjEf7uYjnvzkpBUmXcWcFFMfmtbbjiUfYmUjum3VDLcBP5ms7zjmQkj6njm?cluster=devnet) |
+| `redeem_unguarded` | Paid 50 tokens where 25 were owed. | [explorer](https://explorer.solana.com/tx/oWAy8kJFktWrTV8Xdg7orUt4SjnSuEqni9aoipef6KNhim5SuMFXYPE3y248qEuaHgBCGexixcxipJhRoeUrb2L?cluster=devnet) |
 
 Full run with every step: `docs/devnet-proof.json`.
 
