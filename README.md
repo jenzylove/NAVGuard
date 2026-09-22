@@ -2,6 +2,8 @@
 
 Clock-aware NAV safety infrastructure for tokenized stocks on Solana.
 
+**Live:** https://navguard-tau.vercel.app
+
 Token-2022's Scaled UI Amount extension stores both a current multiplier and a
 replacement multiplier with an activation timestamp. A naive integration can
 continue reading the stored field after the replacement becomes effective,
