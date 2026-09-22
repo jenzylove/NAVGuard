@@ -220,8 +220,6 @@ pub enum NavGuardError {
     InvalidMultiplier,
     #[msg("The caller must provide the multiplier used in its NAV calculation")]
     InvalidExpectedMultiplier,
-    #[msg("The deviation threshold must be at most 100 bps")]
-    InvalidDeviationThreshold,
     #[msg("The mint is currently paused")]
     MintPaused,
     #[msg("The caller multiplier differs from the effective on-chain multiplier")]
@@ -230,4 +228,7 @@ pub enum NavGuardError {
     ActivationWindow,
     #[msg("The mint is not safe for NAV-sensitive settlement")]
     UnsafeMint,
+    // Appended last so existing error codes stay stable for integrators.
+    #[msg("The deviation threshold must be at most 100 bps")]
+    InvalidDeviationThreshold,
 }
