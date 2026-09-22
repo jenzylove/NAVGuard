@@ -16,6 +16,10 @@ use spl_token_2022_interface::{
 declare_id!("GFmZc6zgoYHStU2gU6cZem4sDEtJhHhdGMRCRuXBb7KA");
 
 const DEFAULT_ACTIVATION_WINDOW_SECONDS: u32 = 15 * 60;
+/// Prevent integrations from accidentally opting out of the guard with a
+/// permissive caller-supplied tolerance. Five bps is the reference default;
+/// one percent is the absolute maximum accepted by the program.
+const MAX_DEVIATION_BPS: u16 = 100;
 
 #[program]
 pub mod navguard {
@@ -28,6 +32,10 @@ pub mod navguard {
         expected_multiplier_e9: u64,
         max_deviation_bps: u16,
     ) -> Result<GuardReport> {
+        require!(
+            max_deviation_bps <= MAX_DEVIATION_BPS,
+            NavGuardError::InvalidDeviationThreshold
+        );
         inspect_mint(
             &ctx.accounts.mint,
             expected_multiplier_e9,
@@ -47,6 +55,10 @@ pub mod navguard {
         require!(
             expected_multiplier_e9 > 0,
             NavGuardError::InvalidExpectedMultiplier
+        );
+        require!(
+            max_deviation_bps <= MAX_DEVIATION_BPS,
+            NavGuardError::InvalidDeviationThreshold
         );
         let report = inspect_mint(
             &ctx.accounts.mint,
@@ -208,6 +220,8 @@ pub enum NavGuardError {
     InvalidMultiplier,
     #[msg("The caller must provide the multiplier used in its NAV calculation")]
     InvalidExpectedMultiplier,
+    #[msg("The deviation threshold must be at most 100 bps")]
+    InvalidDeviationThreshold,
     #[msg("The mint is currently paused")]
     MintPaused,
     #[msg("The caller multiplier differs from the effective on-chain multiplier")]

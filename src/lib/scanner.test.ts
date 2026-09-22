@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyGuardState, selectEffectiveMultiplier } from "./scanner";
+import { classifyGuardState, classifyMintSafety, selectEffectiveMultiplier } from "./scanner";
 
 describe("multiplier activation", () => {
   it("uses the stored multiplier before activation", () => {
@@ -33,6 +33,28 @@ describe("multiplier activation", () => {
         effectiveMultiplier: 1,
         effectiveTimestamp: 0,
         isPaused: true,
+        nowSeconds: 5_000,
+      }).state,
+    ).toBe("RED");
+  });
+
+  it("keeps an activated mint safe while flagging stored-field adapters", () => {
+    expect(
+      classifyMintSafety({
+        effectiveTimestamp: 1_000,
+        effectiveMultiplier: 1.25,
+        isPaused: false,
+        nowSeconds: 5_000,
+      }).state,
+    ).toBe("GREEN");
+  });
+
+  it("blocks a non-positive effective multiplier", () => {
+    expect(
+      classifyMintSafety({
+        effectiveTimestamp: null,
+        effectiveMultiplier: 0,
+        isPaused: false,
         nowSeconds: 5_000,
       }).state,
     ).toBe("RED");

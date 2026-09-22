@@ -41,6 +41,20 @@ npm run dev
 The Vite development server proxies `/api/rpc` to a public Solana mainnet RPC.
 For production, the included Vercel edge function performs the same gateway
 role. Set `SOLANA_RPC_URL` to a dedicated provider endpoint before deployment.
+See [`.env.example`](.env.example) for the supported deployment variables.
+
+The scanner reads the live xStocks registry through `/api/xstocks`, then reads
+mint accounts and the Solana Clock sysvar through the RPC gateway. The registry
+is used for discovery only: every safety decision is derived from the mint
+bytes and the validator clock. If the registry is temporarily unavailable, the
+audited SPYx/NVDAx/etc. fallback set is used and the fallback is logged for
+operators.
+
+For optional market-parity evidence, set `PYTH_API_KEY` in the Vercel project.
+The detail drawer then calls `/api/pyth` to compare the underlying equity feed
+with the tokenized-equity feed, reports stale feeds, and flags parity drift
+above 100 bps. Without the key, the feature is explicitly shown as unavailable;
+it never changes the mint or adapter verdict.
 
 ## Verify
 
@@ -128,10 +142,32 @@ SOLANA_RPC_URL=http://127.0.0.1:8899 node scripts/devnet-demo.mjs
 Point `SOLANA_RPC_URL` at devnet after `solana program deploy` to produce explorer
 links.
 
+## Security and operational boundaries
+
+- `/api/rpc` is POST-only, limits request bodies to 64 KiB, and allows only the
+  read methods used by the scanner (`getAccountInfo`, `getMultipleAccounts`,
+  and `getSlot`). It does not expose a general-purpose RPC relay.
+- Multiplier activation is evaluated against the Solana Clock sysvar returned
+  by the same confirmed RPC read as the mint accounts. Browser wall-clock time
+  is not used to select NAV state.
+- The UI exposes two separate signals: `ADAPTER RISK` warns that stored-field
+  math can be stale, while `MINT SAFETY` describes paused/unknown/activation
+  conditions on the live mint. This avoids presenting an integration warning
+  as proof that the issuer's token is insolvent.
+- The on-chain program rejects caller-supplied deviation thresholds above 100
+  bps. Integrators still need to choose a business policy below that ceiling
+  and pass the exact multiplier used by their settlement math.
+- No wallet, private key, or user portfolio data is required by the scanner.
+  The CPI guard is the enforcement path for protocols that need a transaction
+  to fail closed.
+
+See [`docs/threat-model.md`](docs/threat-model.md) for the trust boundaries,
+failure modes, and integration checklist.
+
 ## Current architecture
 
 ```text
-xStocks mint registry (pinned priority set)
+xStocks live mint registry (audited fallback)
                     │
                     ▼
           Solana mainnet RPC gateway

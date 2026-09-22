@@ -12,6 +12,17 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: () => "/",
       },
+      "/api/xstocks": {
+        target: "https://api.xstocks.fi/api/v2/public",
+        changeOrigin: true,
+        rewrite: (path) => {
+          const url = new URL(path, "http://localhost");
+          const symbol = url.searchParams.get("symbol");
+          return symbol
+            ? `/assets/${encodeURIComponent(symbol)}`
+            : `/assets?page=${url.searchParams.get("page") ?? "0"}`;
+        },
+      },
     },
   },
 });

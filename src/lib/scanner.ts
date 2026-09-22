@@ -1,4 +1,5 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey, SYSVAR_CLOCK_PUBKEY } from "@solana/web3.js";
+import { Buffer } from "buffer";
 import {
   TOKEN_2022_PROGRAM_ID,
   getPausableConfig,
@@ -18,7 +19,8 @@ export const RPC_URL = import.meta.env.VITE_SOLANA_RPC_URL ??
 
 function asNumber(value: number | bigint | null | undefined): number | null {
   if (value === null || value === undefined) return null;
-  return Number(value);
+  const number = Number(value);
+  return Number.isSafeInteger(number) ? number : null;
 }
 
 export function selectEffectiveMultiplier(
@@ -41,6 +43,9 @@ export function classifyGuardState(input: {
   if (input.rawMultiplier === null || input.effectiveMultiplier === null) {
     return { state: "UNKNOWN", reason: "Scaled UI Amount extension not found" };
   }
+  if (!Number.isFinite(input.rawMultiplier) || !Number.isFinite(input.effectiveMultiplier) || input.rawMultiplier <= 0 || input.effectiveMultiplier <= 0) {
+    return { state: "RED", reason: "Scaled UI multiplier is invalid" };
+  }
 
   const secondsFromActivation = input.effectiveTimestamp
     ? Math.abs(input.nowSeconds - input.effectiveTimestamp)
@@ -57,10 +62,41 @@ export function classifyGuardState(input: {
   return { state: "GREEN", reason: "Current Token-2022 state is internally consistent" };
 }
 
+export function classifyMintSafety(input: {
+  effectiveTimestamp: number | null;
+  effectiveMultiplier: number | null;
+  isPaused: boolean | null;
+  nowSeconds: number;
+}): { state: GuardState; reason: string } {
+  if (input.isPaused) return { state: "RED", reason: "Transfers are paused on the mint" };
+  if (input.effectiveMultiplier === null) {
+    return { state: "UNKNOWN", reason: "Scaled UI Amount extension not found" };
+  }
+  if (!Number.isFinite(input.effectiveMultiplier) || input.effectiveMultiplier <= 0) {
+    return { state: "RED", reason: "Scaled UI multiplier is invalid" };
+  }
+
+  const secondsFromActivation = input.effectiveTimestamp
+    ? Math.abs(input.nowSeconds - input.effectiveTimestamp)
+    : Number.POSITIVE_INFINITY;
+  if (secondsFromActivation <= ACTIVATION_WINDOW_SECONDS) {
+    return { state: "AMBER", reason: "Inside the multiplier activation safety window" };
+  }
+  return { state: "GREEN", reason: "Mint is safe for the current clock" };
+}
+
+function decodeClockTimestamp(data: Buffer | Uint8Array | null): number | null {
+  if (!data || data.length < 40) return null;
+  const view = Buffer.from(data);
+  const timestamp = Number(view.readBigInt64LE(32));
+  return Number.isSafeInteger(timestamp) ? timestamp : null;
+}
+
 function failedScan(asset: XStocksAsset, mint: string, message: string): MintScan {
   return {
     symbol: asset.symbol,
     name: asset.name,
+    underlyingSymbol: asset.underlyingSymbol,
     logoUrl: asset.logoUrl,
     mint,
     rawMultiplier: null,
@@ -70,6 +106,9 @@ function failedScan(asset: XStocksAsset, mint: string, message: string): MintSca
     deltaBps: null,
     state: "UNKNOWN",
     reason: "Mint could not be decoded",
+    safetyState: "UNKNOWN",
+    safetyReason: "Mint could not be decoded",
+    clockTimestamp: null,
     hasPausableConfig: false,
     isPaused: null,
     hasTransferHook: false,
@@ -86,8 +125,13 @@ export async function scanAssets(assets: XStocksAsset[], signal?: AbortSignal): 
     .map((asset) => ({ asset, mint: getSolanaMint(asset) }))
     .filter((target): target is { asset: XStocksAsset; mint: string } => Boolean(target.mint));
   const publicKeys = scanTargets.map(({ mint }) => new PublicKey(mint));
-  const accounts = await connection.getMultipleAccountsInfo(publicKeys, { commitment: "confirmed" });
-  const nowSeconds = Math.floor(Date.now() / 1000);
+  const [accounts, clockAccount] = await Promise.all([
+    connection.getMultipleAccountsInfo(publicKeys, { commitment: "confirmed" }),
+    connection.getAccountInfo(SYSVAR_CLOCK_PUBKEY, "confirmed"),
+  ]);
+  const clockTimestamp = decodeClockTimestamp(clockAccount?.data ?? null);
+  if (clockTimestamp === null) throw new Error("Solana Clock sysvar could not be decoded");
+  const nowSeconds = clockTimestamp;
 
   return scanTargets.map(({ asset, mint }, index) => {
     try {
@@ -118,10 +162,17 @@ export async function scanAssets(assets: XStocksAsset[], signal?: AbortSignal): 
         isPaused,
         nowSeconds,
       });
+      const safety = classifyMintSafety({
+        effectiveTimestamp,
+        effectiveMultiplier,
+        isPaused,
+        nowSeconds,
+      });
 
       return {
         symbol: asset.symbol,
         name: asset.name,
+        underlyingSymbol: asset.underlyingSymbol,
         logoUrl: asset.logoUrl,
         mint,
         rawMultiplier,
@@ -131,6 +182,9 @@ export async function scanAssets(assets: XStocksAsset[], signal?: AbortSignal): 
         deltaBps,
         state: classification.state,
         reason: classification.reason,
+        safetyState: safety.state,
+        safetyReason: safety.reason,
+        clockTimestamp,
         hasPausableConfig: Boolean(pausable),
         isPaused,
         hasTransferHook: Boolean(transferHook),

@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -26,6 +26,7 @@ import { ProofSection, IntegrateSection } from "./Sections";
 import { RPC_URL, scanAssets, scanCustomMint } from "./lib/scanner";
 import type { GuardState, MintScan } from "./lib/types";
 import { fetchPriorityAssets } from "./lib/xstocks";
+import { fetchPythParity, type PythParity } from "./lib/pyth";
 
 const STATUS_LABEL: Record<GuardState, string> = {
   GREEN: "SAFE",
@@ -92,7 +93,7 @@ function ScanRow({ scan, onSelect }: { scan: MintScan; onSelect: (scan: MintScan
       <span className="mono numeric-cell">{formatMultiplier(scan.rawMultiplier)}</span>
       <span className="mono numeric-cell effective-value">{formatMultiplier(scan.effectiveMultiplier)}</span>
       <span className={`mono numeric-cell ${scan.deltaBps ? "delta-value" : ""}`}>{formatDelta(scan.deltaBps)}</span>
-      <span className={`status-pill status-pill--${scan.state.toLowerCase()}`}>
+      <span className={`status-pill status-pill--${scan.state.toLowerCase()}`} title={scan.reason}>
         {stateIcon(scan.state)} {STATUS_LABEL[scan.state]}
       </span>
       <ChevronRight className="row-chevron" size={17} />
@@ -101,17 +102,37 @@ function ScanRow({ scan, onSelect }: { scan: MintScan; onSelect: (scan: MintScan
 }
 
 function DetailPanel({ scan, onClose }: { scan: MintScan; onClose: () => void }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [pyth, setPyth] = useState<PythParity | null>(null);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    const controller = new AbortController();
+    void fetchPythParity(scan.symbol, scan.underlyingSymbol, controller.signal).then(setPyth).catch(() => {
+      if (!controller.signal.aborted) setPyth({ status: "UNAVAILABLE", reason: "Pyth cross-check unavailable" });
+    });
+    return () => {
+      controller.abort();
+      document.removeEventListener("keydown", handleKeyDown);
+      previous?.focus();
+    };
+  }, [onClose, scan.symbol, scan.underlyingSymbol]);
+
   return (
-    <div className="detail-backdrop" onMouseDown={onClose}>
-      <aside className="detail-panel" onMouseDown={(event) => event.stopPropagation()}>
-        <button className="icon-button close-button" type="button" onClick={onClose} aria-label="Close details">
+    <div className="detail-backdrop" role="presentation" onMouseDown={onClose}>
+      <aside className="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button ref={closeButtonRef} className="icon-button close-button" type="button" onClick={onClose} aria-label="Close details">
           <X size={18} />
         </button>
         <div className="detail-header">
           <AssetMark scan={scan} />
           <div>
             <span className="eyebrow">MINT INSPECTION</span>
-            <h2>{scan.symbol}</h2>
+            <h2 id="detail-title">{scan.symbol}</h2>
             <p>{scan.name}</p>
           </div>
         </div>
@@ -122,6 +143,12 @@ function DetailPanel({ scan, onClose }: { scan: MintScan; onClose: () => void })
             <strong>{STATUS_LABEL[scan.state]}</strong>
             <small>{scan.reason}</small>
           </span>
+        </div>
+
+        <div className={`safety-summary safety-summary--${scan.safetyState.toLowerCase()}`}>
+          <span>Mint safety</span>
+          <strong>{STATUS_LABEL[scan.safetyState]}</strong>
+          <small>{scan.safetyReason}</small>
         </div>
 
         <section className="detail-section">
@@ -140,6 +167,25 @@ function DetailPanel({ scan, onClose }: { scan: MintScan; onClose: () => void })
             <span>Activation</span>
             <strong>{formatTime(scan.effectiveTimestamp)}</strong>
           </div>
+          <div className="timestamp-row">
+            <Clock3 size={15} />
+            <span>Solana clock</span>
+            <strong>{formatTime(scan.clockTimestamp)}</strong>
+          </div>
+        </section>
+
+        <section className="detail-section">
+          <div className="section-heading"><h3>Pyth parity cross-check</h3><span>OPTIONAL ORACLE</span></div>
+          {!pyth ? <div className="pyth-state">Checking the underlying equity against the tokenized feed…</div> : pyth.status === "UNAVAILABLE" ? (
+            <div className="pyth-state">{pyth.reason ?? "Configure PYTH_API_KEY to enable this cross-check."}</div>
+          ) : (
+            <dl className="pyth-grid">
+              <div><dt>Underlying</dt><dd className="mono">${pyth.underlyingPrice?.toFixed(4)}</dd></div>
+              <div><dt>{pyth.feedKind === "REDEMPTION_RATE" ? "Tokenized (derived)" : "Tokenized"}</dt><dd className="mono">${pyth.tokenizedPrice?.toFixed(4)}</dd></div>
+              <div><dt>Parity drift</dt><dd className="mono">{formatDelta(pyth.parityBps ?? null)}</dd></div>
+              <div><dt>Status</dt><dd className={`pyth-status pyth-status--${pyth.status.toLowerCase()}`}>{pyth.status}</dd></div>
+            </dl>
+          )}
         </section>
 
         <section className="detail-section">
@@ -179,14 +225,14 @@ export default function App() {
   const [filter, setFilter] = useState<GuardState | "ALL">("ALL");
   const [customMint, setCustomMint] = useState("");
   const [customLoading, setCustomLoading] = useState(false);
+  const closeSelected = useCallback(() => setSelected(null), []);
 
-  const runScan = useCallback(async () => {
-    const controller = new AbortController();
+  const runScan = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
     try {
-      const assets = await fetchPriorityAssets(controller.signal);
-      const nextScans = await scanAssets(assets, controller.signal);
+      const assets = await fetchPriorityAssets(signal);
+      const nextScans = await scanAssets(assets, signal);
       setScans(nextScans);
       setLastUpdated(new Date());
     } catch (scanError) {
@@ -194,11 +240,12 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-    return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    void runScan();
+    const controller = new AbortController();
+    void runScan(controller.signal);
+    return () => controller.abort();
   }, [runScan]);
 
   const metrics = useMemo(() => {
@@ -280,7 +327,7 @@ export default function App() {
 
         <section className="metric-strip" aria-label="Scan overview">
           <div><small>MINTS SCANNED</small><strong>{loading ? "·" : metrics.scanned}</strong><span>priority xStocks</span></div>
-          <div><small>REQUIRES REVIEW</small><strong className="amber-text">{loading ? "·" : metrics.review}</strong><span>integration risk</span></div>
+          <div><small>ADAPTER REVIEW</small><strong className="amber-text">{loading ? "·" : metrics.review}</strong><span>stored-field risk</span></div>
           <div><small>HARD BLOCKS</small><strong className={metrics.blocked ? "red-text" : ""}>{loading ? "·" : metrics.blocked}</strong><span>paused or unsafe</span></div>
           <div><small>DATA PROVENANCE</small><strong className="source-name">ON-CHAIN</strong><span>not an indexer estimate</span></div>
         </section>
@@ -290,7 +337,7 @@ export default function App() {
             <div>
               <span className="eyebrow">NAVGUARD SCAN</span>
               <h2>Inspect the live mint state.</h2>
-              <p>Every value below is decoded from the Token-2022 mint account at scan time.</p>
+              <p>Mint bytes and the Solana Clock sysvar are read at scan time. Review means a stored-field adapter is unsafe.</p>
             </div>
             <button className="refresh-button" type="button" onClick={() => void runScan()} disabled={loading}>
               <RefreshCw size={15} className={loading ? "spin" : ""} /> Refresh mainnet
@@ -303,7 +350,7 @@ export default function App() {
                 <Search size={16} />
                 <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search ticker, company, or mint" />
               </label>
-              <div className="filters" role="group" aria-label="Filter by status">
+              <div className="filters" role="group" aria-label="Filter by adapter risk">
                 {(["ALL", "AMBER", "GREEN", "RED"] as const).map((state) => (
                   <button className={filter === state ? "active" : ""} type="button" key={state} onClick={() => setFilter(state)}>
                     {state === "ALL" ? "All" : STATUS_LABEL[state]}
@@ -314,7 +361,7 @@ export default function App() {
 
             <div className="scan-table">
               <div className="table-head">
-                <span>ASSET</span><span>MINT</span><span>STORED</span><span>EFFECTIVE NOW</span><span>DELTA</span><span>VERDICT</span><span />
+                <span>ASSET</span><span>MINT</span><span>STORED</span><span>EFFECTIVE NOW</span><span>DELTA</span><span>ADAPTER RISK</span><span />
               </div>
               {loading ? (
                 <div className="loading-state"><LoaderCircle className="spin" size={25} /><strong>Reading mainnet mint accounts</strong><span>Decoding Token-2022 extensions…</span></div>
@@ -332,7 +379,7 @@ export default function App() {
             </div>
           </div>
 
-          {error && scans.length > 0 ? <div className="inline-warning"><AlertTriangle size={15} /> {error}</div> : null}
+          {error && scans.length > 0 ? <div className="inline-warning" role="alert"><AlertTriangle size={15} /> {error}</div> : null}
 
           <form className="custom-scan" onSubmit={(event) => void submitCustomMint(event)}>
             <div className="custom-icon"><Fingerprint size={22} /></div>
@@ -381,7 +428,7 @@ export default function App() {
         <span>Built for Stocklana 2026</span>
       </footer>
 
-      {selected ? <DetailPanel scan={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? <DetailPanel scan={selected} onClose={closeSelected} /> : null}
     </div>
   );
 }

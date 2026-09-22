@@ -9,6 +9,7 @@ export interface XStocksDeployment {
 export interface XStocksAsset {
   symbol: string;
   name: string;
+  underlyingSymbol?: string;
   logoUrl?: string;
   isTradingHalted?: boolean;
   deployments: XStocksDeployment[];
@@ -17,6 +18,7 @@ export interface XStocksAsset {
 export interface MintScan {
   symbol: string;
   name: string;
+  underlyingSymbol?: string;
   logoUrl?: string;
   mint: string;
   rawMultiplier: number | null;
@@ -26,6 +28,9 @@ export interface MintScan {
   deltaBps: number | null;
   state: GuardState;
   reason: string;
+  safetyState: GuardState;
+  safetyReason: string;
+  clockTimestamp: number | null;
   hasPausableConfig: boolean;
   isPaused: boolean | null;
   hasTransferHook: boolean;
